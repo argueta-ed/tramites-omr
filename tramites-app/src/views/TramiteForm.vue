@@ -2,6 +2,12 @@
   <div class="card form-card">
     <h1 class="card-title"> {{ isEdit ? 'Editar Trámite' : 'Crear Trámite' }} </h1>
 
+    <Alert tipo="success" :mensaje="mensajeExito">
+      <router-link to="/" style="margin-left: 8px; color: inherit; font-weight: 600;">
+        Ver listado
+      </router-link>
+    </Alert>
+
     <div v-if="loadingTramite" class="loading-text">Cargando datos...</div>
 
     <form v-else @submit.prevent="submitForm">
@@ -46,6 +52,9 @@
         <p v-if="errors.dias_habiles" class="error-text">{{ errors.dias_habiles[0] }}</p>
       </div>
 
+      <!-- Errores generales -->
+      <Alert :mensaje="errorGeneral"/>
+
       <!-- Botones -->
       <div class="form-actions">
         <button type="submit" class="btn btn-primary" :disabled="enviando">
@@ -62,6 +71,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { tramiteService, institucionService } from '../services/api.js'
+import Alert from '../components/Alert.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -78,6 +88,8 @@ const tramite = ref({
 
 const instituciones = ref([]);
 const errors = ref({});
+const errorGeneral = ref(null);
+const mensajeExito = ref(null);
 const loadingTramite = ref(false);
 const loadingInstituciones = ref(false);
 const enviando = ref(false);
@@ -96,9 +108,7 @@ async function cargarTramite(id) {
       dias_habiles: data.dias_habiles
     };
   } catch (error) {
-    console.error('Error al cargar el trámite:', error);
-    alert('No se pudo cargar el trámite. Por favor, inténtelo de nuevo.');
-    router.push('/');
+    errorGeneral.value = 'No se pudo cargar los datos del trámite.';
   } finally {
     loadingTramite.value = false;
   }
@@ -111,8 +121,7 @@ async function cargarInstituciones() {
     const response = await institucionService.getAll();
     instituciones.value = response.data.data;
   } catch (error) {
-    console.error('Error al cargar las instituciones:', error);
-    alert('No se pudieron cargar las instituciones. Por favor, inténtelo de nuevo.');
+    errorGeneral.value = 'No se pudo cargar las instituciones.';
   } finally {
     loadingInstituciones.value = false;
   }
@@ -129,7 +138,7 @@ function validar() {
   if (!tramite.value.institucion_id) {
     newErrors.institucion_id = ['La institución es obligatoria.'];
   }
-  if (!tramite.value.dias_habiles || tramite.value.dias_habiles <= 1) {
+  if (!tramite.value.dias_habiles || tramite.value.dias_habiles < 1) {
     newErrors.dias_habiles = ['Los días hábiles son obligatorios.'];
   }
 
@@ -138,6 +147,8 @@ function validar() {
 
 async function submitForm() {
   errors.value = {};
+  errorGeneral.value = null;
+  mensajeExito.value = null;
 
   const err = validar();
   if (Object.keys(err).length > 0) {
@@ -150,18 +161,23 @@ async function submitForm() {
   try {
     if (isEdit.value) {
       await tramiteService.update(route.params.id, tramite.value);
-      alert('Trámite actualizado exitosamente.');
+      mensajeExito.value = 'Trámite actualizado exitosamente.';
     } else {
       await tramiteService.create(tramite.value);
-      alert('Trámite creado exitosamente.');
+      mensajeExito.value = 'Trámite creado exitosamente.';
+      tramite.value = {
+        codigo: '',
+        nombre: '',
+        descripcion: '',
+        institucion_id: '',
+        dias_habiles: '',
+      };
     }
-    router.push('/');
   } catch (error) {
-    console.error('Error al guardar el trámite:', error);
     if (error.response && error.response.data && error.response.data.errors) {
-      errors.value = error.response.data.errors;
+      errors.value = error.response.data.errors ?? {};
     } else {
-      alert('Ocurrió un error al guardar el trámite. Por favor, inténtelo de nuevo.');
+      errorGeneral.value = error.response?.data?.message ?? 'Ocurrió un error al guardar el trámite.';
     }
   } finally {
     enviando.value = false;

@@ -12,6 +12,7 @@
 
   <!-- Mensaje de carga -->
   <div v-if="loading" class="loading-text">Cargando trámites...</div>
+  <Alert v-else-if="error" :mensaje="error" />
 
   <!-- Tabla -->
   <template v-else>
@@ -31,12 +32,14 @@ import {tramiteService, institucionService} from '../services/api.js';
 import TramitesTable from '../components/TramitesTable.vue';
 import Pagination from '../components/Pagination.vue';
 import TramitesFiltros from '../components/TramitesFiltros.vue';
+import Alert from '../components/Alert.vue';
 
 const tramites = ref([]);
 const instituciones = ref([]);
 const tramiteSeleccinado = ref(null);
 const desactivado = ref(false);
 const loading = ref(false);
+const error = ref(null);
 
 const meta = ref({
   current_page: 1,
@@ -50,13 +53,20 @@ const filtros = ref({
 });
 
 async function cargarTramites(page = 1) {
+  loading.value = true;
+  error.value = null;
+
   try {
     const params = { page, ...filtros.value };
+    Object.keys(params).forEach(k => !params[k] && delete params[k])
+
     const response = await tramiteService.getAll(params);
     tramites.value = response.data.data;
     meta.value = response.data.meta;
-  } catch (error) {
-    console.error('Error al cargar los trámites:', error);
+  } catch (e) {
+    error.value = e.response?.data?.message ?? 'Error al cargar los trámites.';
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -64,8 +74,8 @@ async function cargarInstituciones() {
   try {
     const response = await institucionService.getAll();
     instituciones.value = response.data.data;
-  } catch (error) {
-    console.error('Error al cargar las instituciones:', error);
+  } catch (e) {
+    error.value = e.response?.data?.message ?? 'Error al cargar las instituciones.';
   }
 }
 
@@ -88,8 +98,8 @@ async function desactivarTramite() {
     await tramiteService.desactivate(tramiteSeleccinado.value.id);
     tramiteSeleccinado.value = null;
     await cargarTramites();
-  } catch (error) {
-    console.error('Error al desactivar el trámite:', error);
+  } catch (e) {
+    error.value = e.response?.data?.message ?? 'Error al desactivar el trámite.';
   } finally {
     desactivado.value = false;
   }

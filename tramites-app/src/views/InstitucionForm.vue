@@ -2,6 +2,12 @@
   <div class="card form-card">
     <h1 class="card-title">Nueva Institución</h1>
 
+    <Alert tipo="success" :mensaje="mensajeExito">
+      <router-link to="/" style="margin-left: 8px; color: inherit; font-weight: 600;">
+        Ver listado
+      </router-link>
+    </Alert>
+
     <form @submit.prevent="submitForm">
       <!-- Nombre -->
       <div class="form-group">
@@ -23,6 +29,9 @@
         <p v-if="errors.tipo" class="error-text">{{ errors.tipo[0] }}</p>
       </div>
 
+      <!-- Errores generales -->
+      <Alert :mensaje="errorGeneral"/>
+
       <!-- Botones -->
       <div class="form-actions">
         <button type="submit" class="btn btn-primary" :disabled="enviando">
@@ -38,12 +47,15 @@
 <script setup>
 import { ref } from 'vue';
 import { institucionService } from '../services/api.js';
+import Alert from '../components/Alert.vue';
 
 const institucion = ref({
   nombre: '',
   tipo: '',
 });
 const errors = ref({});
+const errorGeneral = ref(null);
+const mensajeExito = ref(null);
 const enviando = ref(false);
 
 function validar() {
@@ -59,6 +71,8 @@ function validar() {
 
 async function submitForm() {
   errors.value = {};
+  errorGeneral.value = null;
+  mensajeExito.value = null;
 
   const err = validar();
   if (Object.keys(err).length > 0) {
@@ -69,14 +83,16 @@ async function submitForm() {
   enviando.value = true;
   try {
     await institucionService.create(institucion.value);
+    mensajeExito.value = 'Institución creada exitosamente.';
     institucion.value = {
       nombre: '',
       tipo: '',
     };
   } catch (error) {
-    console.error('Error al crear la institución:', error);
-    if (error.response && error.response.data && error.response.data.errors) {
-      errors.value = error.response.data.errors;
+    if (error.response && error.response.status === 422) {
+      errors.value = error.response.data.errors ?? {};
+    } else {
+      errorGeneral.value = error.response?.data?.message ?? 'Error al crear la institución.'
     }
   } finally {
     enviando.value = false;
