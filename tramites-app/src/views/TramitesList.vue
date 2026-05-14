@@ -1,44 +1,43 @@
 <template>
-  <div class="card">
-    <div class="card-header-row">
-      <h1 class="card-title">Listado de Trámites</h1>
-      <router-link class="btn btn-primary btn-sm" :to="{ name: 'tramites-create' }">Nuevo Trámite</router-link>
+  <div>
+    <div class="card">
+      <div class="card-header-row">
+        <h1 class="card-title">Listado de Trámites</h1>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-success btn-sm" @click="exportCSV">
+            Exportar CSV
+          </button>
+          <router-link class="btn btn-primary btn-sm" :to="{ name: 'tramites-create' }">+ Nuevo Trámite</router-link>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <TramitesFiltros v-model:filtros="filtros" :instituciones="instituciones" @limpiar-filtros="limpiarFiltros" />
+
+      <!-- Mensaje de carga -->
+      <div v-if="loading" class="loading-text">Cargando trámites...</div>
+      <Alert v-else-if="error" :mensaje="error" />
+
+      <!-- Tabla -->
+      <template v-else>
+        <TramitesTable :tramites="tramites" @desactivar="abrirModal" />
+
+        <!-- Paginación -->
+        <Pagination :meta="meta" @page-changed="cargarTramites" />
+
+      </template>
     </div>
+    <!-- Modal de confirmación -->
+    <ConfirmModal :visible="!!tramiteSeleccionado" titulo="Confirmar Desactivación"
+      :mensaje="`¿Estás seguro de que deseas desactivar el trámite ${tramiteSeleccionado?.nombre}?`"
+      :cargando="desactivado" @confirmar="desactivarTramite" @cancelar="tramiteSeleccionado = null" />
   </div>
-
-
-  <!-- Filtros -->
-  <TramitesFiltros v-model:filtros="filtros" :instituciones="instituciones" @limpiar-filtros="limpiarFiltros" />
-
-  <!-- Mensaje de carga -->
-  <div v-if="loading" class="loading-text">Cargando trámites...</div>
-  <Alert v-else-if="error" :mensaje="error" />
-
-  <!-- Tabla -->
-  <template v-else>
-    <TramitesTable :tramites="tramites" @desactivar="abrirModal" />
-
-    <!-- Paginación -->
-    <Pagination :meta="meta" @page-changed="cargarTramites" />
-
-  </template>
-
-  <!-- Modal de confirmación -->
-  <ConfirmModal
-    :visible="!!tramiteSeleccionado"
-    titulo="Confirmar Desactivación"
-    :mensaje="`¿Estás seguro de que deseas desactivar el trámite ${tramiteSeleccionado?.nombre}?`"
-    :cargando="desactivado"
-    @confirmar="desactivarTramite"
-    @cancelar="tramiteSeleccionado = null"
-  />
-
 </template>
 
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import {tramiteService, institucionService} from '../services/api.js';
+import { tramiteService, institucionService } from '../services/api.js';
 
 import TramitesTable from '../components/TramitesTable.vue';
 import Pagination from '../components/Pagination.vue';
@@ -105,7 +104,7 @@ function abrirModal(tramite) {
 async function desactivarTramite() {
   if (!tramiteSeleccionado.value) return;
   desactivado.value = true;
-  try{
+  try {
     await tramiteService.desactivate(tramiteSeleccionado.value.id);
     tramiteSeleccionado.value = null;
     await cargarTramites(meta.value.current_page);
@@ -128,4 +127,31 @@ watch(filtros, () => {
     cargarTramites(1);
   }, 300);
 }, { deep: true });
+
+function exportCSV() {
+  if (!tramites.value.length) {
+    return;
+  }
+
+  const headers = ['Código', 'Nombre', 'Institución', 'Días Hábiles', 'Estado'];
+  const rows = tramites.value.map(t => [
+    t.codigo,
+    t.nombre,
+    t.institucion?.nombre || '',
+    t.dias_habiles,
+    t.activo ? 'Activo' : 'Inactivo'
+  ]);
+
+  const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'tramites.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 </script>
