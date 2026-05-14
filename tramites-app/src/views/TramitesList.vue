@@ -16,12 +16,23 @@
 
   <!-- Tabla -->
   <template v-else>
-    <TramitesTable :tramites="tramites" @desactivar="handleDesactivar" />
+    <TramitesTable :tramites="tramites" @desactivar="abrirModal" />
 
     <!-- Paginación -->
     <Pagination :meta="meta" @page-changed="cargarTramites" />
 
   </template>
+
+  <!-- Modal de confirmación -->
+  <ConfirmModal
+    :visible="!!tramiteSeleccionado"
+    titulo="Confirmar Desactivación"
+    :mensaje="`¿Estás seguro de que deseas desactivar el trámite ${tramiteSeleccionado?.nombre}?`"
+    :cargando="desactivado"
+    @confirmar="desactivarTramite"
+    @cancelar="tramiteSeleccionado = null"
+  />
+
 </template>
 
 
@@ -33,10 +44,11 @@ import TramitesTable from '../components/TramitesTable.vue';
 import Pagination from '../components/Pagination.vue';
 import TramitesFiltros from '../components/TramitesFiltros.vue';
 import Alert from '../components/Alert.vue';
+import ConfirmModal from '../components/ConfirmModal.vue';
 
 const tramites = ref([]);
 const instituciones = ref([]);
-const tramiteSeleccinado = ref(null);
+const tramiteSeleccionado = ref(null);
 const desactivado = ref(false);
 const loading = ref(false);
 const error = ref(null);
@@ -86,18 +98,17 @@ function limpiarFiltros() {
   };
 }
 
-function handleDesactivar(tramite) {
-  tramiteSeleccinado.value = tramite;
-  desactivarTramite();
+function abrirModal(tramite) {
+  tramiteSeleccionado.value = tramite;
 }
 
 async function desactivarTramite() {
-  if (!tramiteSeleccinado.value) return;
+  if (!tramiteSeleccionado.value) return;
   desactivado.value = true;
   try{
-    await tramiteService.desactivate(tramiteSeleccinado.value.id);
-    tramiteSeleccinado.value = null;
-    await cargarTramites();
+    await tramiteService.desactivate(tramiteSeleccionado.value.id);
+    tramiteSeleccionado.value = null;
+    await cargarTramites(meta.value.current_page);
   } catch (e) {
     error.value = e.response?.data?.message ?? 'Error al desactivar el trámite.';
   } finally {
