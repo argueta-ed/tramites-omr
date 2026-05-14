@@ -22,7 +22,7 @@
                 <td>{{ tramite.dias_habiles }}</td>
                 <td>
                     <span class="badge" :class="[tramite.activo ? 'badge-success' : 'badge-danger']">
-                        {{ tramite.activo === 'activo' ? 'Activo' : 'Inactivo' }}
+                        {{ tramite.activo ? 'Activo' : 'Inactivo' }}
                     </span>
                 </td>
                 <td>

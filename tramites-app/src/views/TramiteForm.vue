@@ -47,7 +47,7 @@
       <!-- Días hábiles -->
       <div class="form-group">
         <label for="dias_habiles">Días Hábiles *</label>
-        <input type="number" id="dias_habiles" class="form-control" :class="{ 'is-invalid': errors.dias_habiles }"
+        <input type="number" min="1" id="dias_habiles" class="form-control" :class="{ 'is-invalid': errors.dias_habiles }"
           v-model="tramite.dias_habiles" placeholder="Número de días">
         <p v-if="errors.dias_habiles" class="error-text">{{ errors.dias_habiles[0] }}</p>
       </div>
