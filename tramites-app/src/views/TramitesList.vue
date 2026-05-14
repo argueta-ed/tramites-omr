@@ -11,6 +11,10 @@
   <!-- Tabla -->
   <template v-else>
     <TramitesTable :tramites="tramites" @desactivar="handleDesactivar" />
+
+    <!-- Paginación -->
+    <Pagination :meta="meta" @page-changed="cargarTramites" />
+
   </template>
 </template>
 
@@ -20,16 +24,26 @@ import { ref, onMounted } from 'vue';
 import {tramiteService} from '../services/api.js';
 
 import TramitesTable from '../components/TramitesTable.vue';
+import Pagination from '../components/Pagination.vue';
 
 const tramites = ref([]);
 const tramiteSeleccinado = ref(null);
 const desactivado = ref(false);
 const loading = ref(false);
 
-async function cargarTramites() {
+const meta = ref({
+  current_page: 1,
+  last_page: 1,
+  per_page: 10,
+  total: 0
+});
+
+async function cargarTramites(page = 1) {
   try {
-    const response = await tramiteService.getAll();
+    const params = { page }
+    const response = await tramiteService.getAll(params);
     tramites.value = response.data.data;
+    meta.value = response.data.meta;
   } catch (error) {
     console.error('Error al cargar los trámites:', error);
   }

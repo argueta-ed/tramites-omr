@@ -135,3 +135,38 @@ body {
 .table tbody tr:hover {
     background: #f9f9f9;
 }
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    gap: 6px;
+    align-items: center;
+}
+.pagination button {
+    padding: 6px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+.pagination button:hover:not(:disabled) {
+    background: #16314a;
+    color: #fff;
+}
+
+.pagination button:disabled {
+    opacity: 0.9;
+    cursor: not-allowed;
+}
+.pagination .active {
+    background: #1a3a5c;
+    color: #fff;
+}
+.pagination-info {
+    color: #888;
+    font-size: 0.9rem;
+}
