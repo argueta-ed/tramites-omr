@@ -9,14 +9,14 @@
       <div class="form-group">
         <label for="codigo">Código *</label>
         <input id="codigo" class="form-control" :class="{ 'is-invalid': errors.codigo }" v-model="tramite.codigo"
-          placeholder="Ej. MH-003" :disabled="isEdit" required>
-        <p v-if="errors.codigo" class="error-text">{{ errors.codigo }}</p>
+          placeholder="Ej. MH-003" :disabled="isEdit">
+        <p v-if="errors.codigo" class="error-text">{{ errors.codigo[0] }}</p>
       </div>
       <!-- Nombre -->
       <div class="form-group">
         <label for="nombre">Nombre *</label>
         <input type="text" id="nombre" class="form-control" :class="{ 'is-invalid': errors.nombre }"
-          v-model="tramite.nombre" placeholder="Nombre del trámite" required>
+          v-model="tramite.nombre" placeholder="Nombre del trámite">
         <p v-if="errors.nombre" class="error-text">{{ errors.nombre[0] }}</p>
       </div>
       <!-- Descripción -->
@@ -29,7 +29,7 @@
       <div class="form-group">
         <label for="institucion_id">Institución *</label>
         <select id="institucion_id" class="form-control" :class="{ 'is-invalid': errors.institucion_id }"
-          v-model="tramite.institucion_id" required>
+          v-model="tramite.institucion_id">
           <option value="">Seleccione una institución</option>
           <option v-for="institucion in instituciones" :key="institucion.id" :value="institucion.id">
             {{ institucion.nombre }}
@@ -42,7 +42,7 @@
       <div class="form-group">
         <label for="dias_habiles">Días Hábiles *</label>
         <input type="number" id="dias_habiles" class="form-control" :class="{ 'is-invalid': errors.dias_habiles }"
-          v-model="tramite.dias_habiles" placeholder="Número de días" required>
+          v-model="tramite.dias_habiles" placeholder="Número de días">
         <p v-if="errors.dias_habiles" class="error-text">{{ errors.dias_habiles[0] }}</p>
       </div>
 
@@ -124,13 +124,13 @@ function validar() {
     newErrors.codigo = ['El código es obligatorio.'];
   }
   if (!tramite.value.nombre.trim()) {
-    newErrors.nombre += ['El nombre es obligatorio.'];
+    newErrors.nombre = ['El nombre es obligatorio.'];
   }
   if (!tramite.value.institucion_id) {
-    newErrors.institucion_id += ['La institución es obligatoria.'];
+    newErrors.institucion_id = ['La institución es obligatoria.'];
   }
   if (!tramite.value.dias_habiles || tramite.value.dias_habiles <= 1) {
-    newErrors.dias_habiles += ['Los días hábiles son obligatorios.'];
+    newErrors.dias_habiles = ['Los días hábiles son obligatorios.'];
   }
 
   return newErrors;
