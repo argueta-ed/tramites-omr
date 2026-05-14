@@ -6,6 +6,11 @@
     </div>
   </div>
 
+
+  <!-- Filtros -->
+  <TramitesFiltros v-model:filtros="filtros" :instituciones="instituciones" @limpiar-filtros="limpiarFiltros" />
+
+  <!-- Mensaje de carga -->
   <div v-if="loading" class="loading-text">Cargando trámites...</div>
 
   <!-- Tabla -->
@@ -20,13 +25,15 @@
 
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import {tramiteService} from '../services/api.js';
+import { ref, onMounted, watch } from 'vue';
+import {tramiteService, institucionService} from '../services/api.js';
 
 import TramitesTable from '../components/TramitesTable.vue';
 import Pagination from '../components/Pagination.vue';
+import TramitesFiltros from '../components/TramitesFiltros.vue';
 
 const tramites = ref([]);
+const instituciones = ref([]);
 const tramiteSeleccinado = ref(null);
 const desactivado = ref(false);
 const loading = ref(false);
@@ -37,16 +44,36 @@ const meta = ref({
   per_page: 10,
   total: 0
 });
+const filtros = ref({
+  nombre: '',
+  institucion_id: ''
+});
 
 async function cargarTramites(page = 1) {
   try {
-    const params = { page }
+    const params = { page, ...filtros.value };
     const response = await tramiteService.getAll(params);
     tramites.value = response.data.data;
     meta.value = response.data.meta;
   } catch (error) {
     console.error('Error al cargar los trámites:', error);
   }
+}
+
+async function cargarInstituciones() {
+  try {
+    const response = await institucionService.getAll();
+    instituciones.value = response.data.data;
+  } catch (error) {
+    console.error('Error al cargar las instituciones:', error);
+  }
+}
+
+function limpiarFiltros() {
+  filtros.value = {
+    nombre: '',
+    institucion_id: ''
+  };
 }
 
 function handleDesactivar(tramite) {
@@ -70,5 +97,14 @@ async function desactivarTramite() {
 
 onMounted(() => {
   cargarTramites();
+  cargarInstituciones();
 });
+
+let searchTimeout = null
+watch(filtros, () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    cargarTramites(1);
+  }, 300);
+}, { deep: true });
 </script>
